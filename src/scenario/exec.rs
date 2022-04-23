@@ -1,6 +1,6 @@
 use inquire::{Select, Text};
 use crate::kube::{
-    list::PodsList,
+    pod::PodsList,
 };
 use crate::error::KubeErr;
 

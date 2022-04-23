@@ -14,7 +14,9 @@ pub enum KubeErr {
     EmptyContainers,
     EmptyPorts,
     WrongPort,
-    Network(String)
+    Network(String),
+    SelectedPod,
+    ForwardPort
 }
 
 impl std::error::Error for KubeErr {}
@@ -29,7 +31,9 @@ impl std::fmt::Display for KubeErr {
             KubeErr::EmptyContainers => write!(f, "The pod does not contain any container !"),
             KubeErr::EmptyPorts => write!(f, "The selected container does not have any exposed ports"),
             KubeErr::WrongPort => write!(f, "The input port is not a numeric value"),
-            KubeErr::Network(msg) => write!(f, "Error while sending / receiving data with pod {msg}")
+            KubeErr::Network(msg) => write!(f, "Error while sending / receiving data with pod {msg}"),
+            KubeErr::SelectedPod => write!(f, "Unable to find selected pod"),
+            KubeErr::ForwardPort => write!(f, "Unable to forward port with the targeted pod")
         }
     }
 }
