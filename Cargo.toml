@@ -8,6 +8,11 @@ edition = "2021"
 [dependencies]
 inquire = { version = "0.2.1" }
 clap = { version = "3.1.10", features = ["derive"] }
-kube = { version = "0.71.0", features = ["runtime", "derive"] }
+kube = { version = "0.71.0", features = ["default", "client", "derive", "runtime", "ws"] }
 k8s-openapi = { version = "0.14.0", features = ["v1_22"] }
 tokio = { version = "1.17.0", features = ["full"] }
+tokio-util = "0.7.1"
+futures = "0.3"
+hyper = { version = "0.14", features = ["full"] }
+tower = "0.4.12"
+futures-util = "0.3.21"

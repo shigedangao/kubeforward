@@ -3,6 +3,7 @@ use clap::Parser;
 mod scenario;
 mod error;
 mod kube;
+mod utils;
 
 #[derive(Debug, Parser)]
 #[clap(name = "kubexec", author = "marc intha-amnouay")]
