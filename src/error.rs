@@ -27,7 +27,7 @@ impl std::fmt::Display for KubeErr {
             KubeErr::Kubeconfig(msg) => write!(f, "Error while reading Kubeconfig: {msg}"),
             KubeErr::Prompt(msg) => write!(f, "Something unexpected happened with the prompt: {msg}"),
             KubeErr::Kube(msg) => write!(f, "Error while querying with kubernetes {msg}"),
-            KubeErr::EmptyPods(ns) => write!(f, "Could not found pod in the selected context and namespace: {ns}"),
+            KubeErr::EmptyPods(ns) => write!(f, "Could not found pod in the selected context and namespace: `{ns}`"),
             KubeErr::EmptyContainers => write!(f, "The pod does not contain any container !"),
             KubeErr::EmptyPorts => write!(f, "The selected container does not have any exposed ports"),
             KubeErr::WrongPort => write!(f, "The input port is not a numeric value"),

@@ -7,7 +7,7 @@ mod kube;
 mod utils;
 
 #[derive(Debug, Parser)]
-#[clap(name = "kubexec", author = "marc intha-amnouay")]
+#[clap(name = "kubeforward", author = "marc intha-amnouay")]
 struct Args {
     #[clap(short, long, default_value = "default")]
     namespace: String,
@@ -38,6 +38,6 @@ async fn main() {
     ).await;
 
     if let Err(err) = res {
-        log::error!("{err:?}");
+        log::error!("{}", err.to_string());
     }
 }
