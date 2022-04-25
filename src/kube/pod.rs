@@ -3,22 +3,26 @@ use kube::{
     ResourceExt
 };
 use k8s_openapi::api::core::v1::Pod;
-use super::*;
-use super::container::ContainerWrapper;
-use super::listener::Context;
+use super::{
+    container::ContainerWrapper,
+    listener::Context,
+    *
+};
 use crate::error::KubeErr;
 use crate::utils;
 
+// Struct used to improve work on pods
 pub struct PodsList {
     client: Client,
     namespace: String,
     pods: Vec<Pod>,
     selected_pod: Option<Pod>,
+    container_wrapper: ContainerWrapper
 }
 
 impl PodsList {
     /// Create a new PodsList structure
-    ///     
+    ///
     /// # Arguments
     /// * `context` - Option<String>
     /// * `ns` - &str
@@ -31,33 +35,32 @@ impl PodsList {
             client,
             namespace: ns.to_owned(),
             pods: list.items,
-            selected_pod: None
+            selected_pod: None,
+            container_wrapper: ContainerWrapper::default()
         };
 
         Ok(pods)
     }
 
     /// Get a list of pod name for the list of pods that has been founded
-    /// 
+    ///
     /// # Arguments
     /// * `&self` - Self
     pub fn get_pod_name_list(&self) -> Vec<String> {
         self.pods
             .to_owned()
             .into_iter()
-            .map(|p| p.metadata.name)
-            .filter(|p| p.is_some())
-            .map(|p| p.unwrap())
+            .filter_map(|p| p.metadata.name)
             .collect::<Vec<_>>()
     }
 
     /// Save the selected pod on the current struct
-    /// 
+    ///
     /// # Arguments
     /// * `&mut self` - Self
     /// * `pod_name` - String
     pub fn set_selected_pod(&mut self, pod_name: String) -> &mut Self {
-        let mut pod: Vec<Pod> = self.pods
+        let mut pod: Vec<_> = self.pods
             .to_owned()
             .into_iter()
             .filter(|p| {
@@ -72,31 +75,21 @@ impl PodsList {
             .collect();
 
         self.selected_pod = pod.pop();
+        self.set_containers_for_selected_pod();
 
         self
     }
 
     /// Get a list of containers name for a selected pod
-    /// 
+    ///
     /// # Arguments
     /// * `&self` - Self
-    pub fn list_containers(&self) -> Option<Vec<String>> {
-        if let Some(pod) = self.selected_pod.to_owned() {
-            if let Some(spec) = pod.spec {
-                let names: Vec<String> = spec.containers
-                    .into_iter()
-                    .map(|c| c.name)
-                    .collect();
-
-                return Some(names);
-            }
-        }
-
-        None
+    pub fn list_containers(&mut self) -> Vec<String> {
+        self.container_wrapper.get_containers_name()
     }
 
     /// Get the port for the selected pod and the selected container
-    /// 
+    ///
     /// # Arguments
     /// * `&self` - Self
     /// * `selected_container` - Option<String>
@@ -107,40 +100,55 @@ impl PodsList {
                 let ports = containers
                     .set_selected_container(selected_container)
                     .get_port_for_container();
-    
+
                 return ports;
-            }    
+            }
         }
 
         None
     }
 
-    /// 
-    /// Implementation is based on
+    /// Expose the pod based on the container pord and the given user port
+    /// Implementation is highly inspired by the link below
     /// @link https://github.com/kube-rs/kube-rs/blob/master/examples/pod_portforward_bind.rs
-    pub async fn expose_pod(&self, selected_port: i32, user_port: &str) -> Result<(), KubeErr> {
-        let user_port_u16 = user_port.parse::<u16>()?;
+    ///
+    /// # Arguments
+    /// * `&self` - Self
+    /// * `selected_port` - u16
+    /// * `user_port` - u16
+    pub async fn expose_pod(&self, selected_port: u16, user_port: u16) -> Result<(), KubeErr> {
         if self.selected_pod.is_none() {
             return Err(KubeErr::SelectedPod);
         }
 
         let selected_pod = self.selected_pod.to_owned().unwrap();
         let pod_api: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
-        
+
         let mut forwarder = pod_api.portforward(&selected_pod.name(), &[selected_port as u16]).await?;
         let local_port = forwarder
             .take_stream(selected_port as u16)
             .ok_or_else(|| KubeErr::ForwardPort)?;
-        
+
         let (sender, connection) = hyper::client::conn::handshake(local_port).await?;
-        
+
         // listen to errors by spawning a new task
         utils::listen_conn_error(connection);
         utils::listen_forwarder_error(forwarder);
 
-        let ctx = Context::new(sender);
-        ctx.run_server(user_port_u16).await;
+        Context::new(sender)
+            .port_forward_local(user_port)
+            .await
+    }
 
-        Ok(())
+    /// Set the containers for a selected pod to expose
+    ///
+    /// # Arguments
+    /// * `&mut self` - Self
+    fn set_containers_for_selected_pod(&mut self) {
+        if let Some(pod) = self.selected_pod.to_owned() {
+            if let Some(spec) = pod.spec {
+                self.container_wrapper = ContainerWrapper::new(spec.containers);
+            }
+        }
     }
 }

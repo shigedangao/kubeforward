@@ -12,7 +12,7 @@ const USER_PORT: &str = "Input which port you want to use";
 
 /// Trigger Scenario
 ///     List a set of pod and with the provided context and exec into it
-/// 
+///
 /// # Arguments
 /// * `context` - Option<String>
 /// * `ns` - String
@@ -33,11 +33,10 @@ pub async fn trigger_scenario(context: Option<String>, ns: String) -> Result<(),
 
     // get a list of container name
     let containers_name = pod_list.list_containers();
-    if containers_name.is_none() {
+    if containers_name.is_empty() {
         return Err(KubeErr::EmptyContainers)
     }
 
-    let containers_name = containers_name.unwrap();
     // propose a set of command to the user
     let selected_container = Select::new(CONTAINER_SELECT_PROMPT, containers_name)
         .prompt()?
@@ -51,7 +50,9 @@ pub async fn trigger_scenario(context: Option<String>, ns: String) -> Result<(),
 
     let ports = ports.unwrap();
     let selected_port = Select::new(SELECTED_PORT, ports).prompt()?;
-    let user_port = Text::new(USER_PORT).prompt()?;
+    let user_port: u16 = Text::new(USER_PORT)
+        .prompt()?
+        .parse::<u16>()?;
 
-    pod_list.expose_pod(selected_port, &user_port).await
+    pod_list.expose_pod(selected_port as u16, user_port).await
 }

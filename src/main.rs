@@ -1,4 +1,5 @@
 use clap::Parser;
+use simple_logger;
 
 mod scenario;
 mod error;
@@ -17,6 +18,10 @@ struct Args {
 
 #[tokio::main]
 async fn main() {
+    // init the logger
+    simple_logger::init_with_level(log::Level::Info)
+        .expect("Expect to initialize the logger");
+
     let args = Args::parse();
     let context_scenario_res = match args.context {
         false => None,
@@ -28,11 +33,11 @@ async fn main() {
     };
 
     let res = scenario::exec::trigger_scenario(
-        context_scenario_res, 
+        context_scenario_res,
         args.namespace
     ).await;
 
     if let Err(err) = res {
-        println!("{err:?}");
+        log::error!("{err:?}");
     }
 }

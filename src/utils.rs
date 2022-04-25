@@ -21,10 +21,10 @@ pub async fn handle(
 }
 
 /// Listen to the connection error in a tokio task. The signature come from the hyper crate
-/// 
+///
 /// # Arguments
 /// * `conn` - Connection<T, B>
-pub fn listen_conn_error<T, B>(conn: Connection<T, B>) where 
+pub fn listen_conn_error<T, B>(conn: Connection<T, B>) where
     T: Send + AsyncWrite + AsyncRead + Unpin,
     B: HttpBody + 'static + Send,
     B::Data: Send,
@@ -33,7 +33,7 @@ pub fn listen_conn_error<T, B>(conn: Connection<T, B>) where
     // listen to error with the connection
     tokio::spawn(async move {
         if let Err(e) = conn.await {
-            println!("error in connection: {}", e);
+            log::error!("error in connection: {}", e);
         }
     });
 }
@@ -45,7 +45,7 @@ pub fn listen_conn_error<T, B>(conn: Connection<T, B>) where
 pub fn listen_forwarder_error(f: Portforwarder) {
     tokio::spawn(async move {
         if let Err(e) = f.join().await {
-            println!("forwarder error {}", e);
+            log::error!("forwarder error {}", e);
         }
     });
 }
