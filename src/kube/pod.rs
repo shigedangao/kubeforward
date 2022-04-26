@@ -13,7 +13,7 @@ use crate::utils;
 
 // Struct used to improve work on pods
 pub struct PodsList {
-    client: Client,
+    client: Option<Client>,
     namespace: String,
     pods: Vec<Pod>,
     selected_pod: Option<Pod>,
@@ -32,7 +32,7 @@ impl PodsList {
         let list = pod_api.list(&ListParams::default()).await?;
 
         let pods = PodsList {
-            client,
+            client: Some(client),
             namespace: ns.to_owned(),
             pods: list.items,
             selected_pod: None,
@@ -121,8 +121,13 @@ impl PodsList {
             return Err(KubeErr::SelectedPod);
         }
 
+        if self.client.is_none() {
+            return Err(KubeErr::Kube("Could not connect retrieve client handler".to_owned()));
+        }
+
         let selected_pod = self.selected_pod.to_owned().unwrap();
-        let pod_api: Api<Pod> = Api::namespaced(self.client.clone(), &self.namespace);
+        let client = self.client.clone().unwrap();
+        let pod_api: Api<Pod> = Api::namespaced(client, &self.namespace);
 
         let mut forwarder = pod_api.portforward(&selected_pod.name(), &[selected_port as u16]).await?;
         let local_port = forwarder
@@ -150,5 +155,81 @@ impl PodsList {
                 self.container_wrapper = ContainerWrapper::new(spec.containers);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use k8s_openapi::api::core::v1::{PodSpec, Container, ContainerPort};
+    use kube::core::ObjectMeta;
+
+    use super::*;
+
+    fn setup() -> PodsList {
+        let pod = Pod {
+            spec: Some(PodSpec {
+                containers: vec![
+                    Container {
+                        name: "foo".to_owned(),
+                        ports: Some(vec![ContainerPort {
+                            container_port: 3000,
+                            host_ip: None,
+                            host_port: Some(80),
+                            name: Some("Http".to_owned()),
+                            protocol: Some("Tcp".to_owned())
+                        }]),
+                        ..Default::default()
+                    }
+                ],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        PodsList {
+            client: None,
+            namespace: "default".to_owned(),
+            pods: vec![
+                Pod {
+                    metadata: ObjectMeta {
+                        name: Some("foo".to_owned()),
+                        ..Default::default()
+                    },
+                    ..pod
+                }
+            ],
+            selected_pod: None,
+            container_wrapper: ContainerWrapper::default()
+        }
+    }
+
+    #[test]
+    fn expect_to_get_pod_names() {
+        let pod_list = setup();
+        let names = pod_list.get_pod_name_list();
+
+        assert_eq!(names.get(0).unwrap(), "foo");
+    }
+
+    #[test]
+    fn expect_to_get_pod_port_container() {
+        let mut pod_list = setup();
+        let container_port = pod_list
+            .set_selected_pod("foo".to_owned())
+            .get_port_for_container("foo".to_owned());
+
+        assert!(container_port.is_some());
+        let container_port = container_port.unwrap();
+
+        assert_eq!(*container_port.get(0).unwrap(), 3000);
+    }
+
+    #[test]
+    fn expect_to_not_get_pod_port() {
+        let pod_list = setup();
+        let container_port = pod_list
+            .get_port_for_container("foo".to_owned());
+
+        assert!(container_port.is_none());
     }
 }
