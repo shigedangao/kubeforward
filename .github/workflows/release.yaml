@@ -13,7 +13,7 @@ jobs:
       - name: build the project
         run: cargo build --release
       - name: zip
-        run: zip -r kubeforward-linux.zip ./target/release/kubeforward
+        run: zip -j kubeforward-linux.zip ./target/release/kubeforward
       - uses: actions/upload-artifact@v3
         with:
           name: kubeforward-linux.zip
@@ -27,7 +27,7 @@ jobs:
       - name: build the project
         run: cargo build --release
       - name: zip
-        run: zip -r kubeforward-osx.zip ./target/release/kubeforward
+        run: zip -j kubeforward-osx.zip ./target/release/kubeforward
       - uses: actions/download-artifact@v3
         with:
           name: kubeforward-linux.zip
