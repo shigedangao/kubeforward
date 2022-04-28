@@ -6,6 +6,28 @@ Kubeforward is a small interactive CLI which allows to easily expose a Kubernete
     <img align="center" src="./example.gif">
 </p>
 
+# Download
+
+Download the CLI with the following command
+
+## OSX Arm
+
+```shell
+curl -L -O https://github.com/shigedangao/kubeforward/releases/download/v0.1.0/kubeforward-osx-arm.zip && unzip kubeforward-osx-arm.zip
+```
+
+## OSX
+
+```shell
+curl -L -O https://github.com/shigedangao/kubeforward/releases/download/v0.1.0/kubeforward-osx.zip && unzip kubeforward-osx.zip
+```
+
+## Linux
+
+```shell
+curl -L -O https://github.com/shigedangao/kubeforward/releases/download/v0.1.0/kubeforward-linux.zip && unzip kubeforward-linux.zip
+```
+
 # Usage
 
 ## Default usage
