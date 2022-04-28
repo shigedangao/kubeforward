@@ -1,5 +1,4 @@
 use clap::Parser;
-use simple_logger;
 
 mod scenario;
 mod error;

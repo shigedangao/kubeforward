@@ -1,0 +1,39 @@
+name: tests
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: build the project
+        run: cargo build --release
+      - name: zip
+        run: zip -r kubeforward-linux.zip ./target/release/kubeforward
+      - uses: actions/upload-artifact@v3
+        with:
+          name: kubeforward-linux.zip
+          path: kubeforward-linux.zip
+
+  # note does not support arm yet
+  osx:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build the project
+        run: cargo build --release
+      - name: zip
+        run: zip -r kubeforward-osx.zip ./target/release/kubeforward
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubeforward-linux.zip
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: |
+            kubeforward-linux.zip
+            kubeforward-osx.zip

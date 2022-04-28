@@ -28,7 +28,7 @@ impl PodsList {
     /// * `ns` - &str
     pub async fn new(context: Option<String>, ns: &str) -> Result<PodsList, KubeErr> {
         let client = authenticate_with_cluster(&context).await?;
-        let pod_api: Api<Pod> = Api::namespaced(client.clone(), &ns);
+        let pod_api: Api<Pod> = Api::namespaced(client.clone(), ns);
         let list = pod_api.list(&ListParams::default()).await?;
 
         let pods = PodsList {
@@ -48,8 +48,8 @@ impl PodsList {
     /// * `&self` - Self
     pub fn get_pod_name_list(&self) -> Vec<String> {
         self.pods
-            .to_owned()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter_map(|p| p.metadata.name)
             .collect::<Vec<_>>()
     }
@@ -61,8 +61,8 @@ impl PodsList {
     /// * `pod_name` - String
     pub fn set_selected_pod(&mut self, pod_name: String) -> &mut Self {
         let mut pod: Vec<_> = self.pods
-            .to_owned()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|p| {
                 if let Some(name) = &p.metadata.name {
                     if *name == pod_name {
@@ -132,7 +132,7 @@ impl PodsList {
         let mut forwarder = pod_api.portforward(&selected_pod.name(), &[selected_port as u16]).await?;
         let local_port = forwarder
             .take_stream(selected_port as u16)
-            .ok_or_else(|| KubeErr::ForwardPort)?;
+            .ok_or(KubeErr::ForwardPort)?;
 
         let (sender, connection) = hyper::client::conn::handshake(local_port).await?;
 

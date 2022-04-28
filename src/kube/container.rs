@@ -62,8 +62,8 @@ impl ContainerWrapper {
     /// * `&self`
     pub fn get_containers_name(&self) -> Vec<String> {
         self.containers
-            .to_owned()
-            .into_iter()
+            .iter()
+            .cloned()
             .map(|c| c.name)
             .collect()
     }

@@ -39,8 +39,7 @@ pub async fn trigger_scenario(context: Option<String>, ns: String) -> Result<(),
 
     // propose a set of command to the user
     let selected_container = Select::new(CONTAINER_SELECT_PROMPT, containers_name)
-        .prompt()?
-        .to_owned();
+        .prompt()?;
 
     // get a list of port for the selected container
     let ports = pod_list.get_port_for_container(selected_container);

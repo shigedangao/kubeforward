@@ -12,7 +12,7 @@ pub async fn get_namespace_list(context: &Option<String>) -> Result<Vec<String>,
     let namespaces: Api<Namespace> = Api::all(client);
     let mut names = Vec::new();
 
-    for nss in namespaces.list(&ListParams::default()).await {
+    if let Ok(nss) = namespaces.list(&ListParams::default()).await {
         for item in nss.items {
             if let Some(name) = item.metadata.name {
                 names.push(name);
