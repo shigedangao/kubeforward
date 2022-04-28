@@ -9,8 +9,8 @@ mod utils;
 #[derive(Debug, Parser)]
 #[clap(name = "kubeforward", author = "marc intha-amnouay")]
 struct Args {
-    #[clap(short, long, default_value = "default")]
-    namespace: String,
+    #[clap(short, long)]
+    namespace: Option<String>,
 
     #[clap(short, long)]
     context: bool
@@ -23,7 +23,7 @@ async fn main() {
         .expect("Expect to initialize the logger");
 
     let args = Args::parse();
-    let context_scenario_res = match args.context {
+    let context_scenario = match args.context {
         false => None,
         true => {
             let config = scenario::context::trigger_scenario()
@@ -32,9 +32,15 @@ async fn main() {
         }
     };
 
-    let res = scenario::exec::trigger_scenario(
-        context_scenario_res,
-        args.namespace
+    let ns = match args.namespace {
+        Some(ns) => ns,
+        None => scenario::namespace::trigger_scenario(&context_scenario).await
+            .expect("Expect to retrieve namespace from the list of namespace")
+    };
+
+    let res = scenario::forward::trigger_scenario(
+        context_scenario,
+        ns
     ).await;
 
     if let Err(err) = res {

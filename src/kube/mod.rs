@@ -6,11 +6,12 @@ use kube::{
 use crate::error::KubeErr;
 
 pub mod pod;
+pub mod ns;
 mod container;
 mod listener;
 
 /// Authenticate with the Kubernetes cluster based on the provided context
-/// 
+///
 /// # Arguments
 /// * `context` - Option<String>
 pub async fn authenticate_with_cluster(context: &Option<String>) -> Result<Client, KubeErr> {
@@ -22,6 +23,6 @@ pub async fn authenticate_with_cluster(context: &Option<String>) -> Result<Clien
 
     let config = Config::from_kubeconfig(&options).await?;
     let client = Client::try_from(config)?;
-    
+
     Ok(client)
 }
